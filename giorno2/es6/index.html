@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Strawberry</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+        margin: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.11/lib/p5.min.js"></script>
+    <script>
+      let shape;
+
+      function preload() {
+        shape = loadModel('Strawberry_obj.obj', true);
+      }
+
+      function setup() {
+        createCanvas(windowWidth, windowHeight, WEBGL);
+      }
+
+      function draw() {
+        background(0);
+        ambientLight(100);
+        directionalLight(255, 255, 255, 0, 0, -1);
+
+        rotateX(frameCount * 0.02);
+        rotateY(frameCount * 0.02);
+
+        orbitControl();
+        scale(3);
+        normalMaterial();
+        model(shape);
+      }
+    </script>
+  </body>
+</html>

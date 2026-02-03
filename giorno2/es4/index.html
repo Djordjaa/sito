@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.11/lib/p5.min.js"></script>
+    <script>
+      function setup() {
+        createCanvas(windowWidth, windowHeight);
+      }
+
+      function draw() {
+        background(0);
+
+        noStroke();
+
+        for (let i = 0; i < windowWidth; i++) {
+          for (let j = 0; j < windowHeight; j++) {
+            fill(i * 10, j * 10, 255 - i * 10);
+            circle(10 + i * 10, 10 + j * 10, 6);
+          }
+        }
+      }
+    </script>
+  </body>
+</html>

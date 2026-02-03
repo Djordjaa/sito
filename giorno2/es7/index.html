@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      canvas {
+        display: block;
+        margin: auto;
+      }
+
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.11/lib/p5.min.js"></script>
+    <script>
+      let img;
+
+      function preload() {
+        img = loadImage('img.png');
+      }
+
+      function setup() {
+        createCanvas(windowWidth- 20, windowHeight - 20);
+        img.resize(img.width / 100, img.height / 100);
+      }
+
+      function draw() {
+        background(0);
+        noStroke();
+
+        let numH = img.width;
+        let numV = img.height;
+        let d = 20;
+        let ox = (width - (numH - 1) * d) / 2;
+        let oy = (height - (numV - 1) * d) / 2;
+        let amount = mouseX;
+        let ny = frameCount * 0.006;
+        let nx = frameCount * 0.0012;
+        let nz = frameCount * 0.0014;
+        for (let j = 0; j < numV; j++) {
+          for (let i = 0; i < numH; i++) {
+            fill(img.get(i, j));
+            let px = ox + i * d + map(noise(i * 0.1 + nx, j * 0.1 + ny, nz), 0, 1, -amount, amount);
+            let py = oy + j * d + map(noise(i * 0.1 + nx, j * 0.1 + ny, nz), 0, 1, -amount, amount);
+            circle(px, py, 15);
+          }
+        }
+      }
+    </script>
+  </body>
+</html>
