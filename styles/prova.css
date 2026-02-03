@@ -1,0 +1,158 @@
+@font-face {
+  font-family: 'Satoshi';
+  src: url('../media/font/Satoshi-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('../media/font/Satoshi-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('../media/font/Satoshi-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('../media/font/Satoshi-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+}
+
+:root {
+   --white: #f3f3f3;
+   --black: #131313;
+}
+
+* {
+   margin: 0;
+   padding: 0;
+   box-sizing: border-box;
+}
+
+html {
+   scroll-behavior: smooth;
+}
+
+body {
+   /* font-family: Poppins, 'Helvetica Neue', Arial, sans-serif; */
+   font-family: 'Satoshi', 'Helvetica Neue', Arial, sans-serif;
+   line-height: 1.5;
+   color: var(--white);
+   background-color: var(--black);
+}
+
+h1, h2, h3, h4, h5, h6 {
+   line-height: 1.2;
+   margin-bottom: 0.5em;
+}
+
+p {
+   margin-bottom: 1em;
+}
+
+a {
+   color: inherit;
+   text-decoration: none;
+}
+
+img {
+   max-width: 100%;
+   height: auto;
+}
+
+button {
+   cursor: pointer;
+   font-family: inherit;
+}
+
+ul, ol {
+   list-style: none;
+}
+
+section {
+   max-width: 80%;
+   margin: 0 auto;
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   
+}
+
+header {
+   padding: 1.5em 2em;
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+}
+
+.voci-nav {
+   display: flex;
+   gap: 1em;
+}
+
+#hero {
+   height: 90vh;
+}
+
+.voci-nav li a {
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  padding: 0.5em 1em;
+}
+
+.voci-nav li a::before,
+.voci-nav li a::after {
+  content: "";
+  position: absolute;
+  display: block;
+  border: 0 solid transparent;
+  width: 0%;
+  height: 0%;
+  transition: all 0.3s ease;
+}
+
+.voci-nav li a::after {
+  top: 0;
+  left: 0;
+  border-top: 1px solid transparent;
+  border-left: 1px solid transparent;
+}
+
+.voci-nav li a::before {
+  right: 0;
+  bottom: 0;
+  border-bottom: 1px solid transparent;
+  border-right: 1px solid transparent;
+}
+
+.voci-nav li a:hover::before,
+.voci-nav li a:hover::after {
+  width: 10px;
+  height: 10px;
+  border-color: var(--white);
+}
+
+h1 {
+   font-size: 7rem;
+   font-weight: 900;
+}
+
+.voci-nav li:not(:last-child)::after {
+  content: ' /';
+  margin-left: .5rem;
+  color: #c9c9c9;
+}
+
+.logotipo {
+   font-size: 1.5rem;
+   font-weight: 900;
+}
