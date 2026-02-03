@@ -1,46 +1,54 @@
 <!doctype html>
-<html lang="en">
+<html lang="it">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pagina Home</title>
-    <link rel="icon" type="image/x-icon" href="media/icon2.svg" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-      rel="stylesheet" />
+    <title>Djordja</title>
     <link rel="stylesheet" href="styles/style.css" />
+    <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,400,600,700&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <header>
-      <!-- <img src="media/icon2.svg" alt="Logo" style="width: 24px" /> -->
-      <div class="logotipo">Djordja</div>
-      <nav>
-        <ul class="voci-nav">
-          <li><a href="/">Home</a></li>
-          <li><a href="/chi-siamo">About</a></li>
-          <li><a href="/contatti">Contacts</a></li>
-        </ul>
-      </nav>
-    </header>
+    <div class="ambient-light"></div>
+
+    <div class="spotlight"></div>
+    <div class="cursor"></div>
+    <div class="preview-image" id="preview"></div>
 
     <main>
-      <section id="hero">
-        <h1>Progetti Seminario</h1>
-        <p>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Labore, quaerat. Facere mollitia repudiandae vero
-          cupiditate sunt ad, ipsam accusantium inventore reprehenderit dicta vel, distinctio exercitationem! Vitae
-          officia deleniti cum dignissimos?
-        </p>
-        <a href="https://github.com/Djordjaa" target="_blank">My Github page</a>
+      <nav class="navbar">
+        <a target="_blank" href="https://github.com/djordja">Github</a>
+        <a target="_blank" href="https://www.instagram.com/djjordja">Instagram</a>
+        <a target="_blank" href="">Altro</a>
+      </nav>
+
+      <section class="hero">
+        <h1 class="hero-title">Djordja</h1>
       </section>
-      <section>
-        <div></div>
-        <div></div>
-        <div></div>
+
+      <section class="works">
+        <div class="works-label">Progetti</div>
+
+        <ul class="works-list">
+          <li class="work-item" data-img="https://picsum.photos/500/700?random=1">
+            <div class="work-title">Progetto 1</div>
+            <div class="work-category">html, css, js</div>
+          </li>
+          <li class="work-item" data-img="https://picsum.photos/500/700?random=2">
+            <div class="work-title">Progetto 2</div>
+            <div class="work-category">html, css, js</div>
+          </li>
+          <li class="work-item" data-img="https://picsum.photos/500/700?random=3">
+            <div class="work-title">Progetto 3</div>
+            <div class="work-category">html, css, js</div>
+          </li>
+          <li class="work-item" data-img="https://picsum.photos/500/700?random=4">
+            <div class="work-title">Progetto 4</div>
+            <div class="work-category">html, css, js</div>
+          </li>
+        </ul>
       </section>
-      <section></section>
     </main>
 
-    <footer></footer>
+    <script src="scripts/script.js"></script>
   </body>
 </html>
