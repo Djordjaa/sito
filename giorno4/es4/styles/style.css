@@ -12,11 +12,12 @@
 
       .instructions {
         position: fixed;
-        bottom: 2rem;
-        left: 2rem;
+        top: 16px;
+        right: 16px;
         color: #b3b3b3;
         background-color: #050505;
-        padding: 5px;
+        padding: 5px 10px;
+        border-radius: 10px;
         font-size: 0.8rem;
         text-transform: uppercase;
         letter-spacing: 1px;
