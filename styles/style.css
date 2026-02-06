@@ -98,6 +98,7 @@ main {
   text-transform: uppercase;
   letter-spacing: 1px;
   color: #666;
+  overflow-x: hidden;
 }
 
 .hero {
