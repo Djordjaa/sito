@@ -84,7 +84,7 @@ a {
 }
 
 main {
-  padding: 4vw;
+  padding: 3vw 4vw;
   position: relative;
   z-index: 2;
 }
