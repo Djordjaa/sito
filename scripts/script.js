@@ -236,11 +236,16 @@ function decodeOnce(el, finalText, { duration = 520, fps = 30 } = {}) {
 window.addEventListener("load", () => {
   const links = Array.from(document.querySelectorAll(".navbar a"));
   links.forEach((a) => (a.dataset.final = a.textContent.trim()));
+
   links.forEach((a, i) => {
     const baseDelay = 110;
     setTimeout(() => {
       decodeOnce(a, a.dataset.final, { duration: 520, fps: 30 });
     }, i * baseDelay);
+
+    a.addEventListener("mouseenter", () => {
+      decodeOnce(a, a.dataset.final, { duration: 400, fps: 30 });
+    });
   });
 });
 
