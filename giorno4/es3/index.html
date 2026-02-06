@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Djordja — Poster Lab</title>
+    <link rel="stylesheet" href="styles/style.css" />
+  </head>
+
+  <body>
+    <div class="cursor" id="cursor"></div>
+
+    <a class="home-btn" href="../index.html">← Home</a>
+
+    <aside class="ui" id="ui">
+      <header class="titlebar">
+        <div class="brand">
+          <b>Poster Lab</b>
+          <span>type · generator · export</span>
+        </div>
+
+        <div class="tabs">
+          <button class="tab is-active" data-tab="create">Create</button>
+          <button class="tab" data-tab="export">Export</button>
+        </div>
+      </header>
+
+      <div class="ui-inner">
+        <!-- CREATE -->
+        <section class="panel" data-panel="create">
+          <div class="section">
+            <h4>Global</h4>
+
+            <div class="row">
+              <label class="inline">
+                BG
+                <input id="bg" type="color" value="#050505" />
+              </label>
+
+              <select id="palette">
+                <option value="mono">Palette: mono</option>
+                <option value="violet" selected>Palette: violet</option>
+                <option value="holo">Palette: holo</option>
+                <option value="acid">Palette: acid</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <select id="mouseField">
+                <option value="repulse" selected>Mouse field: repulse</option>
+                <option value="magnet">Mouse field: magnet</option>
+                <option value="swirl">Mouse field: swirl</option>
+                <option value="off">Mouse field: off</option>
+              </select>
+
+              <label class="inline">
+                Grain
+                <input id="grain" type="range" min="0" max="100" value="18" />
+              </label>
+            </div>
+
+            <label for="fieldStrength">Field strength <span class="val" id="fieldStrengthVal"></span></label>
+            <input id="fieldStrength" type="range" min="0" max="200" value="90" />
+
+            <div class="btns">
+              <button id="undo">Undo</button>
+              <button id="redo">Redo</button>
+            </div>
+
+            <div class="btns">
+              <button id="clearType" class="ghost">Clear type</button>
+              <button id="clearAll">Clear all</button>
+            </div>
+          </div>
+
+          <div class="section">
+            <h4>Generator</h4>
+
+            <div class="row">
+              <select id="genMode">
+                <option value="network" selected>Mode: network</option>
+                <option value="flow">Mode: flow field</option>
+                <option value="stars">Mode: starfield</option>
+              </select>
+
+              <button id="randomize">Randomize</button>
+            </div>
+
+            <div class="row">
+              <button id="seedLock" class="ghost">Seed: unlocked</button>
+              <button id="freezeGen" class="ghost">Anim: on</button>
+            </div>
+
+            <label for="genDensity">Density <span class="val" id="genDensityVal"></span></label>
+            <input id="genDensity" type="range" min="10" max="240" value="110" />
+
+            <label for="genScale">Scale <span class="val" id="genScaleVal"></span></label>
+            <input id="genScale" type="range" min="10" max="220" value="110" />
+
+            <label for="genSpeed">Speed <span class="val" id="genSpeedVal"></span></label>
+            <input id="genSpeed" type="range" min="0" max="200" value="70" />
+          </div>
+
+          <div class="section">
+            <h4>Type</h4>
+
+            <input id="textInput" type="text" placeholder="Scrivi testo e premi Place (invio)..." />
+
+            <div class="btns" style="margin-top: 10px">
+              <button id="placeText">Place</button>
+              <button id="scatter" class="ghost">Scatter</button>
+            </div>
+
+            <div class="btns" style="margin-top: 10px">
+              <button id="rainToggle">Make it rain</button>
+              <button id="settle" class="ghost">Settle</button>
+            </div>
+
+            <label for="typeSize">Type size <span class="val" id="typeSizeVal"></span></label>
+            <input id="typeSize" type="range" min="14" max="220" value="92" />
+
+            <label for="gravity">Gravity <span class="val" id="gravityVal"></span></label>
+            <input id="gravity" type="range" min="0" max="160" value="38" />
+
+            <label for="bounce">Bounce <span class="val" id="bounceVal"></span></label>
+            <input id="bounce" type="range" min="0" max="95" value="48" />
+
+            <div class="hint">
+              • Digita: crea lettere “loose”<br />
+              • Click: grab letter vicino<br />
+              • Drag: trascina lettera<br />
+              • Enter sul campo: Place text
+            </div>
+          </div>
+        </section>
+
+        <!-- EXPORT -->
+        <section class="panel" data-panel="export" style="display: none">
+          <div class="section">
+            <h4>Export</h4>
+
+            <div class="row">
+              <select id="exportScale">
+                <option value="1">Scale: 1x</option>
+                <option value="2" selected>Scale: 2x</option>
+                <option value="4">Scale: 4x</option>
+              </select>
+              <button id="exportPNG">Export PNG</button>
+            </div>
+
+            <div class="hint">
+              Export salva solo il poster (niente UI).<br />
+              Tip: usa 2x per portfolio.
+            </div>
+          </div>
+
+          <div class="section">
+            <h4>Quick presets</h4>
+            <div class="btns">
+              <button class="preset ghost" data-preset="editorial">Editorial</button>
+              <button class="preset" data-preset="cyber">Cyber</button>
+            </div>
+            <div class="btns" style="margin-top: 10px">
+              <button class="preset ghost" data-preset="holo">Holo</button>
+              <button class="preset ghost" data-preset="mono">Mono</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <div class="toast" id="toast">ok</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.11/lib/p5.min.js"></script>
+    <script src="scripts/script.js"></script>
+  </body>
+</html>

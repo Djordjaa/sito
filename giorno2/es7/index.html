@@ -11,48 +11,35 @@
       }
 
       body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .home-btn {
+        position: fixed;
+        left: 16px;
+        top: 16px;
+        z-index: 9999;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        padding: 10px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(8px);
+      }
+      .home-btn:hover {
+        border-color: rgba(255, 255, 255, 0.22);
       }
     </style>
   </head>
   <body>
+    <a class="home-btn" href="../../index.html">← Home</a>
+
     <script src="https://cdn.jsdelivr.net/npm/p5@1.11.11/lib/p5.min.js"></script>
-    <script>
-      let img;
-
-      function preload() {
-        img = loadImage('img.png');
-      }
-
-      function setup() {
-        createCanvas(windowWidth- 20, windowHeight - 20);
-        img.resize(img.width / 100, img.height / 100);
-      }
-
-      function draw() {
-        background(0);
-        noStroke();
-
-        let numH = img.width;
-        let numV = img.height;
-        let d = 20;
-        let ox = (width - (numH - 1) * d) / 2;
-        let oy = (height - (numV - 1) * d) / 2;
-        let amount = mouseX;
-        let ny = frameCount * 0.006;
-        let nx = frameCount * 0.0012;
-        let nz = frameCount * 0.0014;
-        for (let j = 0; j < numV; j++) {
-          for (let i = 0; i < numH; i++) {
-            fill(img.get(i, j));
-            let px = ox + i * d + map(noise(i * 0.1 + nx, j * 0.1 + ny, nz), 0, 1, -amount, amount);
-            let py = oy + j * d + map(noise(i * 0.1 + nx, j * 0.1 + ny, nz), 0, 1, -amount, amount);
-            circle(px, py, 15);
-          }
-        }
-      }
-    </script>
+    <script src="scripts/script.js"></script>
   </body>
 </html>

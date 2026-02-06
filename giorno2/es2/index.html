@@ -5,24 +5,197 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
     <link rel="stylesheet" href="styles/style.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .ui {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        width: 280px;
+        z-index: 9999;
+        color: #f2f2f2;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Arial,
+          sans-serif;
+        background: rgba(10, 10, 10, 0.62);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 14px 14px 12px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        user-select: none;
+      }
+
+      .ui h3 {
+        margin: 0 0 10px;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        opacity: 0.85;
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .row > * {
+        flex: 1;
+      }
+
+      label {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 12px;
+        opacity: 0.85;
+        margin: 8px 0 0px;
+      }
+      label .val {
+        opacity: 0.7;
+        font-variant-numeric: tabular-nums;
+      }
+
+      select,
+      input[type='range'],
+      input[type='color'],
+      button {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.06);
+        color: #d5d5d5;
+        padding: 10px 10px;
+        outline: none;
+      }
+
+      #brush option {
+        color: black;
+      }
+
+      input[type='range'] {
+        padding: 5px;
+        background-color: black;
+      }
+      input[type='color'] {
+        padding: 0;
+        height: 38px;
+        background: transparent;
+      }
+
+      button {
+        cursor: pointer;
+        font-weight: 600;
+        transition: transform 0.08s ease;
+      }
+      button:active {
+        transform: scale(0.98);
+      }
+
+      .btns {
+        display: flex;
+        gap: 10px;
+      }
+      .btns button {
+        flex: 1;
+      }
+
+      .hint {
+        margin-top: 10px;
+        font-size: 12px;
+        opacity: 0.65;
+        line-height: 1.35;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        opacity: 0.85;
+      }
+      .pill input {
+        width: 16px;
+        height: 16px;
+      }
+    </style>
   </head>
   <body>
+    <div class="ui" id="ui">
+      <h3>Painter</h3>
+
+      <a class="home-btn" href="../../index.html">← Home</a>
+
+      <div class="row">
+        <select id="brush">
+          <option value="pixel">Pixel</option>
+          <option value="round">Round</option>
+          <option value="spray">Spray</option>
+        </select>
+
+        <select id="shape">
+          <option value="circle">Circle</option>
+          <option value="square">Square</option>
+        </select>
+      </div>
+
+      <label for="size">Size <span class="val" id="sizeVal"></span></label>
+      <input id="size" type="range" min="2" max="80" value="18" step="1" />
+
+      <label for="grid">Pixel grid <span class="val" id="gridVal"></span></label>
+      <input id="grid" type="range" min="1" max="40" value="10" step="1" />
+
+      <label for="opacity">Opacity <span class="val" id="opVal"></span></label>
+      <input id="opacity" type="range" min="5" max="100" value="70" step="1" />
+
+      <div class="row">
+        <select id="colorMode">
+          <option value="hue">Hue (neon)</option>
+          <option value="bw">B/W</option>
+        </select>
+
+        <input id="bg" type="color" value="#050505" title="Background color" />
+      </div>
+
+      <div class="row">
+        <label class="pill" style="margin: 0">
+          <input id="mirror" type="checkbox" />
+          Mirror
+        </label>
+
+        <select id="mirrorAxis" disabled>
+          <option value="x">X (left/right)</option>
+          <option value="y">Y (up/down)</option>
+          <option value="both">Both</option>
+        </select>
+      </div>
+
+      <div class="btns">
+        <button id="applyBg">Apply BG</button>
+        <button id="clear">Clear</button>
+      </div>
+
+      <div class="btns" style="margin-top: 10px">
+        <button id="save">Save PNG</button>
+      </div>
+
+      <div class="hint">
+        Dipingi: mouse premuto.<br />
+        Gomma: tieni premuto <b>SHIFT</b>.<br />
+      </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/p5@1.11.11/lib/p5.min.js"></script>
-    <script>
-      function setup() {
-        createCanvas(1000, 500);
-        colorMode(HSB, 360, 100, 100);
-        noStroke();
-      }
-
-      function draw() {
-        let holoHue = (frameCount * 2 + mouseX * 0.5) % 360;
-
-        fill(holoHue, 40, 100);
-
-        ellipse(mouseX, mouseY, 100, 100);
-        ellipse(1000 - mouseX, mouseY, 100, 100);
-      }
-    </script>
+    <script src="scripts/script.js"></script>
   </body>
 </html>

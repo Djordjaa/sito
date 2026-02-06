@@ -1,0 +1,2292 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Djordja — Visual Poster Tool</title>
+
+    <style>
+      :root {
+        --bg: #050505;
+        --panel: rgba(10, 10, 10, 0.62);
+        --stroke: rgba(255, 255, 255, 0.1);
+        --stroke2: rgba(255, 255, 255, 0.14);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.62);
+        --muted2: rgba(255, 255, 255, 0.4);
+        --radius: 18px;
+        --pad: 14px;
+
+        --cursor-x: 50%;
+        --cursor-y: 50%;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+
+      /* custom cursor */
+      .cursor {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #fff;
+        z-index: 99999;
+        pointer-events: none;
+        transform: translate3d(calc(var(--cursor-x) - 5px), calc(var(--cursor-y) - 5px), 0);
+        mix-blend-mode: difference;
+        transition:
+          width 0.12s ease,
+          height 0.12s ease,
+          transform 0.06s linear;
+      }
+      .cursor.is-hover {
+        width: 28px;
+        height: 28px;
+        transform: translate3d(calc(var(--cursor-x) - 14px), calc(var(--cursor-y) - 14px), 0);
+      }
+
+      /* UI panel */
+      .ui {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        bottom: 16px;
+        width: 360px;
+        max-width: calc(100vw - 32px);
+        z-index: 9999;
+        color: var(--text);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+        background: var(--panel);
+        border: 1px solid var(--stroke);
+        border-radius: var(--radius);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.38);
+        overflow: hidden; /* important */
+        user-select: none;
+      }
+
+      .titlebar {
+        padding: 14px 14px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .brand {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .brand b {
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        opacity: 0.96;
+      }
+      .brand span {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.2;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .tab {
+        font: inherit;
+        font-size: 12px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        cursor: pointer;
+      }
+      .tab.is-active {
+        background: rgba(255, 255, 255, 0.14);
+        border-color: rgba(255, 255, 255, 0.18);
+      }
+
+      .ui-inner {
+        padding: 14px;
+        max-height: calc(100vh - 32px - 62px);
+        overflow: auto;
+      }
+      .ui-inner::-webkit-scrollbar {
+        width: 10px;
+      }
+      .ui-inner::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        border: 2px solid rgba(0, 0, 0, 0);
+        background-clip: padding-box;
+      }
+
+      .section {
+        margin-top: 14px;
+      }
+      .section h4 {
+        margin: 0 0 10px;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .row > * {
+        flex: 1;
+      }
+
+      label {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+        font-size: 12px;
+        color: var(--muted);
+        margin: 10px 0 6px;
+      }
+      label .val {
+        color: var(--muted2);
+        font-variant-numeric: tabular-nums;
+      }
+
+      select,
+      input[type='range'],
+      input[type='color'],
+      input[type='text'],
+      button {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        padding: 10px 10px;
+        outline: none;
+        font: inherit;
+        font-size: 12px;
+      }
+      input[type='range'] {
+        padding: 10px 0;
+      }
+      input[type='color'] {
+        padding: 0;
+        height: 38px;
+        background: transparent;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:active {
+        transform: scale(0.99);
+      }
+
+      .btns {
+        display: flex;
+        gap: 10px;
+      }
+      .btns button {
+        flex: 1;
+      }
+
+      .pillrow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .pill {
+        font: inherit;
+        font-size: 12px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        cursor: pointer;
+      }
+      .pill.is-active {
+        background: rgba(255, 255, 255, 0.16);
+        border-color: rgba(255, 255, 255, 0.22);
+      }
+
+      /* preset gallery cards */
+      .gallery {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .card {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 14px;
+        padding: 10px;
+        cursor: pointer;
+        transition:
+          transform 0.12s ease,
+          border-color 0.12s ease,
+          background 0.12s ease;
+      }
+      .card:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.07);
+      }
+      .thumb {
+        height: 64px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(123, 44, 191, 0.55), rgba(0, 0, 0, 0));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        margin-bottom: 8px;
+        position: relative;
+        overflow: hidden;
+      }
+      .thumb::after {
+        content: '';
+        position: absolute;
+        inset: -40%;
+        background: radial-gradient(circle at 30% 40%, rgba(255, 255, 255, 0.18), transparent 45%);
+        transform: rotate(18deg);
+      }
+      .card b {
+        display: block;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+      }
+      .card span {
+        display: block;
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .hint {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.35;
+      }
+
+      .toast {
+        position: fixed;
+        left: 16px;
+        bottom: 16px;
+        z-index: 999999;
+        padding: 10px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.55);
+        color: rgba(255, 255, 255, 0.9);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+        font-size: 12px;
+        opacity: 0;
+        transform: translateY(8px);
+        transition:
+          opacity 0.18s ease,
+          transform 0.18s ease;
+        pointer-events: none;
+      }
+      .toast.is-on {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* small left help (optional) */
+      .hud {
+        position: fixed;
+        left: 16px;
+        top: 16px;
+        z-index: 3;
+        color: rgba(255, 255, 255, 0.7);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+        font-size: 12px;
+        line-height: 1.35;
+        pointer-events: none;
+        max-width: 40vw;
+      }
+
+      @media (max-width: 520px) {
+        .ui {
+          width: 92vw;
+          right: 4vw;
+          top: 10px;
+          bottom: 10px;
+        }
+        .hud {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="spotlight"></div>
+    <div class="cursor" id="cursor"></div>
+
+    <div class="hud" id="hud">
+      <div style="opacity: 0.9; letter-spacing: 0.08em; text-transform: uppercase">Poster Tool</div>
+      <div style="opacity: 0.7">Paint · Type · Generative · FX</div>
+      <div style="opacity: 0.7; margin-top: 6px">Ctrl+Z / Ctrl+Y · Export PNG · Record WebM</div>
+    </div>
+
+    <div class="ui" id="ui">
+      <div class="titlebar">
+        <div class="brand">
+          <b>Visual Poster Tool</b>
+          <span>build posters · export · record</span>
+        </div>
+        <div class="tabs">
+          <button class="tab is-active" data-mode="paint">Paint</button>
+          <button class="tab" data-mode="type">Type</button>
+          <button class="tab" data-mode="gen">Generative</button>
+        </div>
+      </div>
+
+      <div class="ui-inner">
+        <div class="section">
+          <h4>Preset gallery</h4>
+          <div class="gallery" id="gallery"></div>
+        </div>
+
+        <div class="section">
+          <h4>Poster</h4>
+          <div class="row">
+            <select id="artboard">
+              <option value="a4">A4 (2480×3508)</option>
+              <option value="ig">IG Post (1080×1350)</option>
+              <option value="story">Story (1080×1920)</option>
+              <option value="free">Free (window)</option>
+            </select>
+            <select id="guides">
+              <option value="on">Guides: on</option>
+              <option value="off">Guides: off</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <input id="bg" type="color" value="#050505" />
+            <button id="applyBg">Apply BG</button>
+          </div>
+
+          <label for="margin">Safe margin <span class="val" id="marginVal"></span></label>
+          <input id="margin" type="range" min="0" max="180" value="64" step="1" />
+        </div>
+
+        <div class="section">
+          <h4>Global</h4>
+          <div class="row">
+            <select id="palette">
+              <option value="mono">Palette: mono</option>
+              <option value="violet">Palette: violet</option>
+              <option value="holo">Palette: holo</option>
+              <option value="acid">Palette: acid</option>
+            </select>
+            <select id="fx">
+              <option value="none">FX: none</option>
+              <option value="pixel">FX: pixelate</option>
+              <option value="dither">FX: dither</option>
+              <option value="ascii">FX: ascii</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <select id="mirror">
+              <option value="off">Mirror: off</option>
+              <option value="x">Mirror: X</option>
+              <option value="y">Mirror: Y</option>
+              <option value="both">Mirror: both</option>
+            </select>
+            <select id="sym">
+              <option value="1">Symmetry: 1</option>
+              <option value="2">Symmetry: 2</option>
+              <option value="4">Symmetry: 4</option>
+              <option value="6">Symmetry: 6</option>
+              <option value="8">Symmetry: 8</option>
+            </select>
+          </div>
+
+          <label for="opacity">Opacity <span class="val" id="opacityVal"></span></label>
+          <input id="opacity" type="range" min="5" max="100" value="70" step="1" />
+
+          <div class="row">
+            <select id="mouseInt">
+              <option value="on">Mouse interact: on</option>
+              <option value="off">Mouse interact: off</option>
+            </select>
+            <select id="mouseMode">
+              <option value="repulse">Mouse mode: repulse</option>
+              <option value="magnet">Mouse mode: magnet</option>
+              <option value="lens">Mouse mode: lens</option>
+            </select>
+          </div>
+
+          <label for="mouseStrength">Mouse strength <span class="val" id="mouseStrengthVal"></span></label>
+          <input id="mouseStrength" type="range" min="0" max="200" value="90" step="1" />
+        </div>
+
+        <!-- Paint panel -->
+        <div class="section" id="panel-paint">
+          <h4>Paint</h4>
+          <div class="row">
+            <select id="brush">
+              <option value="round">Brush: round</option>
+              <option value="pixel">Brush: pixel</option>
+              <option value="spray">Brush: spray</option>
+              <option value="line">Brush: line</option>
+            </select>
+            <select id="shape">
+              <option value="circle">Shape: circle</option>
+              <option value="square">Shape: square</option>
+            </select>
+          </div>
+
+          <label for="size">Size <span class="val" id="sizeVal"></span></label>
+          <input id="size" type="range" min="2" max="120" value="22" step="1" />
+
+          <label for="grid">Pixel grid <span class="val" id="gridVal"></span></label>
+          <input id="grid" type="range" min="1" max="40" value="12" step="1" />
+        </div>
+
+        <!-- Type panel -->
+        <div class="section" id="panel-type" style="display: none">
+          <h4>Type</h4>
+
+          <div class="row">
+            <input id="textInput" type="text" placeholder="Type text & press Enter…" />
+          </div>
+
+          <div class="row">
+            <button id="placeText">Place text</button>
+            <button id="clearType">Clear type</button>
+          </div>
+
+          <div class="row">
+            <button id="rainToggle">Make it rain</button>
+            <button id="scatter">Scatter</button>
+          </div>
+
+          <label for="typeSize">Type size <span class="val" id="typeSizeVal"></span></label>
+          <input id="typeSize" type="range" min="16" max="180" value="84" step="1" />
+
+          <label for="gravity">Gravity <span class="val" id="gravityVal"></span></label>
+          <input id="gravity" type="range" min="0" max="140" value="35" step="1" />
+        </div>
+
+        <!-- Generative panel -->
+        <div class="section" id="panel-gen" style="display: none">
+          <h4>Generative</h4>
+          <div class="row">
+            <select id="genKind">
+              <option value="flow">Gen: flow lines</option>
+              <option value="orbit">Gen: orbit</option>
+              <option value="waves">Gen: noise waves</option>
+            </select>
+            <button id="capture">Capture to poster</button>
+          </div>
+
+          <div class="row">
+            <button id="liveToggle">Live: on</button>
+            <button id="clearPoster">Clear poster</button>
+          </div>
+
+          <label for="density">Density <span class="val" id="densityVal"></span></label>
+          <input id="density" type="range" min="10" max="240" value="120" step="1" />
+
+          <label for="scale">Scale <span class="val" id="scaleVal"></span></label>
+          <input id="scale" type="range" min="10" max="220" value="80" step="1" />
+
+          <label for="speed">Speed <span class="val" id="speedVal"></span></label>
+          <input id="speed" type="range" min="0" max="200" value="90" step="1" />
+
+          <label for="noiseAmt">Noise <span class="val" id="noiseVal"></span></label>
+          <input id="noiseAmt" type="range" min="0" max="200" value="120" step="1" />
+        </div>
+
+        <div class="section">
+          <h4>Actions</h4>
+          <div class="btns">
+            <button id="undo">Undo</button>
+            <button id="redo">Redo</button>
+          </div>
+
+          <div class="btns" style="margin-top: 10px">
+            <button id="randomize">Randomize</button>
+            <button id="reset">Reset</button>
+          </div>
+
+          <div class="btns" style="margin-top: 10px">
+            <select id="exportScale">
+              <option value="1">Export: 1x</option>
+              <option value="2">Export: 2x</option>
+              <option value="4">Export: 4x</option>
+            </select>
+            <button id="export">Export PNG</button>
+          </div>
+
+          <div class="btns" style="margin-top: 10px">
+            <button id="rec">Record: start</button>
+            <button id="copyLink">Copy link</button>
+          </div>
+
+          <div class="hint">
+            Paint: drag — eraser: <b>SHIFT</b><br />
+            Type: enter places text · rain = gravity<br />
+            Gen: live preview · capture to poster<br />
+            FX are preview+export (non distruttivi)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast">ok</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.11/lib/p5.min.js"></script>
+    <script>
+      // -----------------------------
+      // Cursor + spotlight smoothing
+      // -----------------------------
+      const body = document.body;
+      const cursorEl = document.getElementById('cursor');
+
+      let tx = innerWidth / 2,
+        ty = innerHeight / 2,
+        cx = tx,
+        cy = ty;
+      addEventListener(
+        'mousemove',
+        (e) => {
+          tx = e.clientX;
+          ty = e.clientY;
+        },
+        { passive: true },
+      );
+      (function tick() {
+        const ease = 0.35;
+        cx += (tx - cx) * ease;
+        cy += (ty - cy) * ease;
+        body.style.setProperty('--cursor-x', cx + 'px');
+        body.style.setProperty('--cursor-y', cy + 'px');
+        requestAnimationFrame(tick);
+      })();
+
+      // cursor hover on interactive UI
+      document.addEventListener('pointerover', (e) => {
+        if (e.target.closest('button, select, input, .card, .pill')) cursorEl.classList.add('is-hover');
+      });
+      document.addEventListener('pointerout', (e) => {
+        if (e.target.closest('button, select, input, .card, .pill')) cursorEl.classList.remove('is-hover');
+      });
+
+      // -----------------------------
+      // Tool state
+      // -----------------------------
+      const state = {
+        mode: 'paint',
+        bg: '#050505',
+        palette: 'violet',
+        fx: 'none',
+        mirror: 'off',
+        sym: 1,
+        opacity: 70,
+
+        mouseInt: true,
+        mouseMode: 'repulse',
+        mouseStrength: 0.9,
+
+        artboard: 'free',
+        guides: true,
+        margin: 64,
+
+        // paint
+        brush: 'round',
+        shape: 'circle',
+        size: 22,
+        grid: 12,
+
+        // type
+        typeSize: 84,
+        gravity: 0.35,
+        raining: false,
+
+        // gen
+        genKind: 'flow',
+        live: true,
+        density: 120,
+        scale: 0.8,
+        speed: 0.9,
+        noiseAmt: 1.2,
+
+        // internal
+        uiHover: false,
+      };
+
+      // -----------------------------
+      // Layers: poster + overlays
+      // -----------------------------
+      let poster; // persistent poster layer
+      let typeOverlay; // moving text overlay (for rain)
+      let art = { x: 0, y: 0, w: 0, h: 0 }; // artboard rect on screen
+
+      // type objects
+      let texts = []; // placed text objects
+      let letters = []; // letter-rain objects
+
+      // undo/redo stacks (snapshot)
+      const undoStack = [];
+      const redoStack = [];
+      const MAX_UNDO = 20;
+
+      // recording
+      let recorder = null;
+      let recChunks = [];
+      let recording = false;
+
+      // -----------------------------
+      // Preset gallery (cards)
+      // -----------------------------
+      const PRESETS = [
+        {
+          id: 'studio',
+          name: 'Studio Grid',
+          desc: 'mono · pixel · clean',
+          thumb: 'linear-gradient(135deg, rgba(255,255,255,.18), rgba(0,0,0,0))',
+          apply() {
+            Object.assign(state, {
+              palette: 'mono',
+              fx: 'none',
+              bg: '#050505',
+              mirror: 'off',
+              sym: 1,
+              opacity: 88,
+              brush: 'pixel',
+              shape: 'square',
+              size: 16,
+              grid: 16,
+              mouseInt: true,
+              mouseMode: 'repulse',
+              mouseStrength: 0.65,
+            });
+          },
+        },
+        {
+          id: 'violetFlow',
+          name: 'Violet Flow',
+          desc: 'flow · capture posters',
+          thumb: 'linear-gradient(135deg, rgba(123,44,191,.55), rgba(0,0,0,0))',
+          apply() {
+            Object.assign(state, {
+              palette: 'violet',
+              fx: 'none',
+              bg: '#050505',
+              mirror: 'x',
+              sym: 2,
+              opacity: 72,
+              genKind: 'flow',
+              live: true,
+              density: 140,
+              scale: 0.78,
+              speed: 0.95,
+              noiseAmt: 1.25,
+              mouseInt: true,
+              mouseMode: 'lens',
+              mouseStrength: 0.9,
+            });
+          },
+        },
+        {
+          id: 'holoAscii',
+          name: 'Holo ASCII',
+          desc: 'ascii · cyber poster',
+          thumb: 'linear-gradient(135deg, rgba(60,255,220,.22), rgba(255,90,240,.18))',
+          apply() {
+            Object.assign(state, {
+              palette: 'holo',
+              fx: 'ascii',
+              bg: '#050505',
+              mirror: 'both',
+              sym: 4,
+              opacity: 70,
+              genKind: 'orbit',
+              live: true,
+              density: 120,
+              scale: 0.7,
+              speed: 1.05,
+              noiseAmt: 1.3,
+              mouseInt: true,
+              mouseMode: 'magnet',
+              mouseStrength: 1.1,
+            });
+          },
+        },
+        {
+          id: 'acidDither',
+          name: 'Acid Dither',
+          desc: 'dither · poster texture',
+          thumb: 'linear-gradient(135deg, rgba(180,255,60,.20), rgba(255,60,210,.14))',
+          apply() {
+            Object.assign(state, {
+              palette: 'acid',
+              fx: 'dither',
+              bg: '#050505',
+              mirror: 'y',
+              sym: 6,
+              opacity: 66,
+              genKind: 'waves',
+              live: true,
+              density: 170,
+              scale: 0.62,
+              speed: 1.15,
+              noiseAmt: 1.6,
+              mouseInt: true,
+              mouseMode: 'repulse',
+              mouseStrength: 1.2,
+            });
+          },
+        },
+      ];
+
+      // -----------------------------
+      // UI wiring
+      // -----------------------------
+      const $ = (id) => document.getElementById(id);
+      const toastEl = $('toast');
+      let toastTimer = null;
+      function toast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add('is-on');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl.classList.remove('is-on'), 900);
+      }
+
+      function setMode(mode) {
+        state.mode = mode;
+        document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('is-active', t.dataset.mode === mode));
+        $('panel-paint').style.display = mode === 'paint' ? '' : 'none';
+        $('panel-type').style.display = mode === 'type' ? '' : 'none';
+        $('panel-gen').style.display = mode === 'gen' ? '' : 'none';
+        updateURL();
+      }
+
+      function renderGallery() {
+        const g = $('gallery');
+        g.innerHTML = '';
+        PRESETS.forEach((p) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <div class="thumb" style="background:${p.thumb}"></div>
+            <b>${p.name}</b>
+            <span>${p.desc}</span>
+          `;
+          card.addEventListener('click', () => {
+            pushState('preset');
+            p.apply();
+            applyStateToUI();
+            updateLabels();
+            updateURL();
+            toast('Preset: ' + p.name);
+          });
+          g.appendChild(card);
+        });
+      }
+
+      function applyStateToUI() {
+        $('palette').value = state.palette;
+        $('fx').value = state.fx;
+        $('mirror').value = state.mirror;
+        $('sym').value = String(state.sym);
+        $('opacity').value = state.opacity;
+
+        $('mouseInt').value = state.mouseInt ? 'on' : 'off';
+        $('mouseMode').value = state.mouseMode;
+        $('mouseStrength').value = Math.round(state.mouseStrength * 100);
+
+        $('artboard').value = state.artboard;
+        $('guides').value = state.guides ? 'on' : 'off';
+        $('margin').value = state.margin;
+        $('bg').value = state.bg;
+
+        $('brush').value = state.brush;
+        $('shape').value = state.shape;
+        $('size').value = state.size;
+        $('grid').value = state.grid;
+
+        $('typeSize').value = state.typeSize;
+        $('gravity').value = Math.round(state.gravity * 100);
+        $('rainToggle').textContent = state.raining ? 'Stop rain' : 'Make it rain';
+
+        $('genKind').value = state.genKind;
+        $('liveToggle').textContent = state.live ? 'Live: on' : 'Live: off';
+        $('density').value = state.density;
+        $('scale').value = Math.round(state.scale * 100);
+        $('speed').value = Math.round(state.speed * 100);
+        $('noiseAmt').value = Math.round(state.noiseAmt * 100);
+
+        setMode(state.mode);
+      }
+
+      function updateLabels() {
+        $('opacityVal').textContent = state.opacity + '%';
+        $('mouseStrengthVal').textContent = state.mouseStrength.toFixed(2);
+        $('marginVal').textContent = state.margin + 'px';
+
+        $('sizeVal').textContent = String(state.size);
+        $('gridVal').textContent = String(state.grid);
+
+        $('typeSizeVal').textContent = state.typeSize + 'px';
+        $('gravityVal').textContent = state.gravity.toFixed(2);
+
+        $('densityVal').textContent = String(state.density);
+        $('scaleVal').textContent = state.scale.toFixed(2);
+        $('speedVal').textContent = state.speed.toFixed(2);
+        $('noiseVal').textContent = state.noiseAmt.toFixed(2);
+      }
+
+      function initUI() {
+        const ui = $('ui');
+        ui.addEventListener('mouseenter', () => (state.uiHover = true));
+        ui.addEventListener('mouseleave', () => (state.uiHover = false));
+
+        document.querySelectorAll('.tab').forEach((btn) => {
+          btn.addEventListener('click', () => setMode(btn.dataset.mode));
+        });
+
+        $('artboard').addEventListener('change', () => {
+          pushState('artboard');
+          state.artboard = $('artboard').value;
+          recalcArtboard();
+          updateURL();
+        });
+        $('guides').addEventListener('change', () => {
+          state.guides = $('guides').value === 'on';
+          updateURL();
+        });
+        $('margin').addEventListener('input', () => {
+          state.margin = +$('margin').value;
+          updateLabels();
+          updateURL();
+        });
+
+        $('bg').addEventListener('input', () => {
+          state.bg = $('bg').value;
+          updateURL();
+        });
+        $('applyBg').addEventListener('click', () => {
+          pushState('bg');
+          applyBGUnderPoster();
+          toast('BG applied');
+        });
+
+        $('palette').addEventListener('change', () => {
+          state.palette = $('palette').value;
+          updateURL();
+        });
+        $('fx').addEventListener('change', () => {
+          state.fx = $('fx').value;
+          updateURL();
+        });
+
+        $('mirror').addEventListener('change', () => {
+          state.mirror = $('mirror').value;
+          updateURL();
+        });
+        $('sym').addEventListener('change', () => {
+          state.sym = +$('sym').value;
+          updateURL();
+        });
+
+        $('opacity').addEventListener('input', () => {
+          state.opacity = +$('opacity').value;
+          updateLabels();
+          updateURL();
+        });
+
+        $('mouseInt').addEventListener('change', () => {
+          state.mouseInt = $('mouseInt').value === 'on';
+          updateURL();
+        });
+        $('mouseMode').addEventListener('change', () => {
+          state.mouseMode = $('mouseMode').value;
+          updateURL();
+        });
+        $('mouseStrength').addEventListener('input', () => {
+          state.mouseStrength = +$('mouseStrength').value / 100;
+          updateLabels();
+          updateURL();
+        });
+
+        // paint
+        $('brush').addEventListener('change', () => {
+          state.brush = $('brush').value;
+          updateURL();
+        });
+        $('shape').addEventListener('change', () => {
+          state.shape = $('shape').value;
+          updateURL();
+        });
+        $('size').addEventListener('input', () => {
+          state.size = +$('size').value;
+          updateLabels();
+          updateURL();
+        });
+        $('grid').addEventListener('input', () => {
+          state.grid = +$('grid').value;
+          updateLabels();
+          updateURL();
+        });
+
+        // type
+        $('placeText').addEventListener('click', () => {
+          placeTextAtCursor();
+        });
+        $('textInput').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            placeTextAtCursor();
+            e.preventDefault();
+          }
+        });
+
+        $('clearType').addEventListener('click', () => {
+          pushState('clearType');
+          texts = [];
+          letters = [];
+          state.raining = false;
+          $('rainToggle').textContent = 'Make it rain';
+          redrawTypeOverlay();
+          toast('Type cleared');
+          updateURL();
+        });
+
+        $('scatter').addEventListener('click', () => {
+          pushState('scatter');
+          scatterType();
+          redrawTypeOverlay();
+          toast('Scattered');
+        });
+
+        $('rainToggle').addEventListener('click', () => {
+          pushState('rainToggle');
+          state.raining = !state.raining;
+          $('rainToggle').textContent = state.raining ? 'Stop rain' : 'Make it rain';
+          if (state.raining) activateLetters();
+          updateURL();
+        });
+
+        $('typeSize').addEventListener('input', () => {
+          state.typeSize = +$('typeSize').value;
+          updateLabels();
+          redrawTypeOverlay();
+          updateURL();
+        });
+
+        $('gravity').addEventListener('input', () => {
+          state.gravity = +$('gravity').value / 100;
+          updateLabels();
+          updateURL();
+        });
+
+        // gen
+        $('genKind').addEventListener('change', () => {
+          state.genKind = $('genKind').value;
+          updateURL();
+        });
+        $('liveToggle').addEventListener('click', () => {
+          state.live = !state.live;
+          $('liveToggle').textContent = state.live ? 'Live: on' : 'Live: off';
+          updateURL();
+        });
+        $('capture').addEventListener('click', () => {
+          pushState('capture');
+          captureGenerativeToPoster();
+          toast('Captured');
+        });
+
+        $('density').addEventListener('input', () => {
+          state.density = +$('density').value;
+          updateLabels();
+          updateURL();
+        });
+        $('scale').addEventListener('input', () => {
+          state.scale = +$('scale').value / 100;
+          updateLabels();
+          updateURL();
+        });
+        $('speed').addEventListener('input', () => {
+          state.speed = +$('speed').value / 100;
+          updateLabels();
+          updateURL();
+        });
+        $('noiseAmt').addEventListener('input', () => {
+          state.noiseAmt = +$('noiseAmt').value / 100;
+          updateLabels();
+          updateURL();
+        });
+
+        $('clearPoster').addEventListener('click', () => {
+          pushState('clearPoster');
+          clearPoster();
+          toast('Poster cleared');
+        });
+
+        // actions
+        $('undo').addEventListener('click', () => undo());
+        $('redo').addEventListener('click', () => redo());
+        $('randomize').addEventListener('click', () => {
+          pushState('randomize');
+          tastefulRandomize();
+          applyStateToUI();
+          updateLabels();
+          updateURL();
+          toast('Randomized');
+        });
+        $('reset').addEventListener('click', () => {
+          pushState('reset');
+          hardReset();
+          applyStateToUI();
+          updateLabels();
+          updateURL();
+          toast('Reset');
+        });
+
+        $('export').addEventListener('click', () => {
+          exportPNG(+$('exportScale').value);
+        });
+        $('copyLink').addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(location.href);
+            toast('Link copied');
+          } catch {
+            toast('Copy failed');
+          }
+        });
+
+        $('rec').addEventListener('click', () => toggleRecord());
+      }
+
+      // -----------------------------
+      // URL state (tool-like)
+      // -----------------------------
+      function updateURL() {
+        const q = new URLSearchParams();
+        q.set('m', state.mode);
+        q.set('ab', state.artboard);
+        q.set('g', state.guides ? '1' : '0');
+        q.set('mg', state.margin);
+
+        q.set('bg', state.bg.replace('#', ''));
+        q.set('pl', state.palette);
+        q.set('fx', state.fx);
+        q.set('mi', state.mirror);
+        q.set('sy', state.sym);
+        q.set('op', state.opacity);
+
+        q.set('ui', state.mouseInt ? '1' : '0');
+        q.set('um', state.mouseMode);
+        q.set('us', Math.round(state.mouseStrength * 100));
+
+        q.set('br', state.brush);
+        q.set('sh', state.shape);
+        q.set('sz', state.size);
+        q.set('gr', state.grid);
+
+        q.set('ts', state.typeSize);
+        q.set('gv', Math.round(state.gravity * 100));
+        q.set('rn', state.raining ? '1' : '0');
+
+        q.set('gn', state.genKind);
+        q.set('lv', state.live ? '1' : '0');
+        q.set('dn', state.density);
+        q.set('sc', Math.round(state.scale * 100));
+        q.set('sp', Math.round(state.speed * 100));
+        q.set('nz', Math.round(state.noiseAmt * 100));
+
+        history.replaceState(null, '', `${location.pathname}?${q.toString()}`);
+      }
+
+      function loadFromURL() {
+        const q = new URLSearchParams(location.search);
+        if (!q.size) return;
+
+        const get = (k, fallback) => (q.has(k) ? q.get(k) : fallback);
+
+        state.mode = get('m', state.mode);
+        state.artboard = get('ab', state.artboard);
+        state.guides = get('g', state.guides ? '1' : '0') === '1';
+        state.margin = +get('mg', state.margin);
+
+        if (q.has('bg')) state.bg = '#' + q.get('bg');
+        state.palette = get('pl', state.palette);
+        state.fx = get('fx', state.fx);
+        state.mirror = get('mi', state.mirror);
+        state.sym = +get('sy', state.sym);
+        state.opacity = +get('op', state.opacity);
+
+        state.mouseInt = get('ui', state.mouseInt ? '1' : '0') === '1';
+        state.mouseMode = get('um', state.mouseMode);
+        state.mouseStrength = +get('us', Math.round(state.mouseStrength * 100)) / 100;
+
+        state.brush = get('br', state.brush);
+        state.shape = get('sh', state.shape);
+        state.size = +get('sz', state.size);
+        state.grid = +get('gr', state.grid);
+
+        state.typeSize = +get('ts', state.typeSize);
+        state.gravity = +get('gv', Math.round(state.gravity * 100)) / 100;
+        state.raining = get('rn', state.raining ? '1' : '0') === '1';
+
+        state.genKind = get('gn', state.genKind);
+        state.live = get('lv', state.live ? '1' : '0') === '1';
+        state.density = +get('dn', state.density);
+        state.scale = +get('sc', Math.round(state.scale * 100)) / 100;
+        state.speed = +get('sp', Math.round(state.speed * 100)) / 100;
+        state.noiseAmt = +get('nz', Math.round(state.noiseAmt * 100)) / 100;
+      }
+
+      // -----------------------------
+      // p5 setup + draw
+      // -----------------------------
+      function setup() {
+        const c = createCanvas(windowWidth, windowHeight);
+        c.elt.style.position = 'fixed';
+        c.elt.style.inset = '0';
+        c.elt.style.zIndex = '1'; // under UI, above bg
+        c.elt.style.pointerEvents = 'auto';
+
+        pixelDensity(1);
+        colorMode(HSB, 360, 100, 100, 100);
+        noStroke();
+
+        poster = createGraphics(windowWidth, windowHeight);
+        poster.pixelDensity(1);
+        poster.colorMode(HSB, 360, 100, 100, 100);
+        poster.clear();
+
+        typeOverlay = createGraphics(windowWidth, windowHeight);
+        typeOverlay.pixelDensity(1);
+        typeOverlay.colorMode(HSB, 360, 100, 100, 100);
+        typeOverlay.clear();
+
+        renderGallery();
+        initUI();
+        loadFromURL();
+        applyStateToUI();
+        updateLabels();
+        recalcArtboard();
+
+        // initial snapshot
+        pushState('init');
+      }
+
+      function draw() {
+        // background
+        const bg = hexToHSB(state.bg);
+        background(bg.h, bg.s, bg.b, 100);
+
+        // live generative preview (behind poster) if in gen and live
+        if (state.mode === 'gen' && state.live) {
+          drawGenerative(this, art, true);
+        }
+
+        // poster layer
+        image(poster, 0, 0);
+
+        // type rain physics + overlay update
+        if (state.mode === 'type' && state.raining) {
+          stepLetters();
+          redrawTypeOverlay();
+          autoStopRainIfSettled();
+        }
+        image(typeOverlay, 0, 0);
+
+        // guides on top
+        if (state.guides) {
+          drawGuides();
+        }
+
+        // cursor preview for paint
+        if (state.mode === 'paint') {
+          drawBrushPreview();
+        }
+
+        // FX post-process (preview + export)
+        // FX are applied as final display step:
+        if (state.fx !== 'none') {
+          applyFXPreview();
+        }
+      }
+
+      function windowResized() {
+        resizeCanvas(windowWidth, windowHeight);
+
+        const oldPoster = poster.get();
+        poster = createGraphics(windowWidth, windowHeight);
+        poster.pixelDensity(1);
+        poster.colorMode(HSB, 360, 100, 100, 100);
+        poster.clear();
+        poster.image(oldPoster, 0, 0);
+
+        typeOverlay = createGraphics(windowWidth, windowHeight);
+        typeOverlay.pixelDensity(1);
+        typeOverlay.colorMode(HSB, 360, 100, 100, 100);
+        typeOverlay.clear();
+        redrawTypeOverlay();
+
+        recalcArtboard();
+      }
+
+      // -----------------------------
+      // Artboard geometry
+      // -----------------------------
+      function recalcArtboard() {
+        const pad = 16;
+        const W = width,
+          H = height;
+
+        if (state.artboard === 'free') {
+          art.x = 0;
+          art.y = 0;
+          art.w = W;
+          art.h = H;
+          return;
+        }
+
+        // target aspect ratios
+        let aw = 1,
+          ah = 1;
+        if (state.artboard === 'a4') {
+          aw = 2480;
+          ah = 3508;
+        }
+        if (state.artboard === 'ig') {
+          aw = 1080;
+          ah = 1350;
+        }
+        if (state.artboard === 'story') {
+          aw = 1080;
+          ah = 1920;
+        }
+
+        const aspect = aw / ah;
+        const maxW = W - pad * 2 - 380; // leave room for panel
+        const maxH = H - pad * 2;
+
+        // fit rect
+        let wFit = maxW;
+        let hFit = wFit / aspect;
+        if (hFit > maxH) {
+          hFit = maxH;
+          wFit = hFit * aspect;
+        }
+
+        art.w = Math.max(220, Math.floor(wFit));
+        art.h = Math.max(220, Math.floor(hFit));
+        art.x = Math.floor((W - art.w) / 2);
+        art.y = Math.floor((H - art.h) / 2);
+      }
+
+      // -----------------------------
+      // Palettes + color pick
+      // -----------------------------
+      function paletteParams(name) {
+        if (name === 'mono') return { s: 0, b: 100, s2: 0, b2: 100, base: 0 };
+        if (name === 'violet') return { s: 70, b: 98, s2: 55, b2: 100, base: 275 };
+        if (name === 'holo') return { s: 65, b: 100, s2: 55, b2: 100, base: 210 };
+        return { s: 75, b: 100, s2: 65, b2: 100, base: 110 }; // acid
+      }
+
+      function pickHSB(alpha) {
+        const p = paletteParams(state.palette);
+        const h = (p.base + frameCount * 0.6 + mouseX * 0.08) % 360;
+        return { h, s: p.s, b: p.b, a: alpha };
+      }
+
+      function eraseColor(alpha) {
+        const bg = hexToHSB(state.bg);
+        return { h: bg.h, s: bg.s, b: bg.b, a: alpha };
+      }
+
+      // -----------------------------
+      // Paint interactions
+      // -----------------------------
+      function mousePressed() {
+        if (state.mode === 'paint') paintStroke(true);
+      }
+      function mouseDragged() {
+        if (state.mode === 'paint') paintStroke(false);
+      }
+
+      function paintStroke(isStart) {
+        if (state.uiHover) return;
+        if (!insideArtboard(mouseX, mouseY)) return;
+
+        // push state once at start
+        if (isStart) pushState('paint');
+
+        const erasing = keyIsDown(SHIFT);
+        const col = erasing ? eraseColor(Math.min(100, state.opacity + 20)) : pickHSB(state.opacity);
+
+        const brush = state.brush;
+        const shape = state.shape;
+        const size = state.size;
+        const grid = state.grid;
+
+        // base coords (snap if pixel brush)
+        const bx = brush === 'pixel' ? snap(mouseX, grid) : mouseX;
+        const by = brush === 'pixel' ? snap(mouseY, grid) : mouseY;
+
+        // symmetry: rotate around artboard center
+        const n = Math.max(1, state.sym);
+        const cx0 = art.x + art.w / 2;
+        const cy0 = art.y + art.h / 2;
+
+        for (let i = 0; i < n; i++) {
+          const ang = (TWO_PI / n) * i;
+          const rx = rotatePoint(bx, by, cx0, cy0, ang).x;
+          const ry = rotatePoint(bx, by, cx0, cy0, ang).y;
+
+          paintOne(poster, brush, shape, rx, ry, size, grid, col);
+
+          // mirror on top of symmetry
+          if (state.mirror !== 'off') {
+            const mx = art.x + art.w - (rx - art.x);
+            const my = art.y + art.h - (ry - art.y);
+
+            if (state.mirror === 'x') paintOne(poster, brush, shape, mx, ry, size, grid, col);
+            if (state.mirror === 'y') paintOne(poster, brush, shape, rx, my, size, grid, col);
+            if (state.mirror === 'both') {
+              paintOne(poster, brush, shape, mx, ry, size, grid, col);
+              paintOne(poster, brush, shape, rx, my, size, grid, col);
+              paintOne(poster, brush, shape, mx, my, size, grid, col);
+            }
+          }
+        }
+      }
+
+      function paintOne(g, brush, shape, x, y, size, grid, col) {
+        g.push();
+        g.noStroke();
+        g.fill(col.h, col.s, col.b, col.a);
+
+        if (brush === 'pixel') {
+          g.rectMode(CENTER);
+          g.rect(x, y, grid, grid);
+          g.pop();
+          return;
+        }
+
+        if (brush === 'round') {
+          if (shape === 'square') {
+            g.rectMode(CENTER);
+            g.rect(x, y, size, size);
+          } else {
+            g.circle(x, y, size);
+          }
+          g.pop();
+          return;
+        }
+
+        if (brush === 'line') {
+          g.stroke(col.h, col.s, col.b, col.a);
+          g.strokeWeight(Math.max(1, size * 0.12));
+          g.line(pmouseX, pmouseY, x, y);
+          g.pop();
+          return;
+        }
+
+        // spray (controlled)
+        const density = Math.floor(map(size, 2, 120, 10, 46));
+        const r = size * 0.65;
+        for (let i = 0; i < density; i++) {
+          const ang = random(TWO_PI);
+          const rad = r * sqrt(random());
+          const sx = x + cos(ang) * rad;
+          const sy = y + sin(ang) * rad;
+          g.fill(col.h, col.s, col.b, col.a * 0.22);
+          g.circle(sx, sy, random(1.6, 4.5));
+        }
+        g.pop();
+      }
+
+      function drawBrushPreview() {
+        if (state.uiHover) return;
+        if (!insideArtboard(mouseX, mouseY)) return;
+
+        noFill();
+        stroke(0, 0, 100, 22);
+        strokeWeight(1);
+
+        const brush = state.brush;
+        const size = state.size;
+        const grid = state.grid;
+
+        const x = brush === 'pixel' ? snap(mouseX, grid) : mouseX;
+        const y = brush === 'pixel' ? snap(mouseY, grid) : mouseY;
+
+        if (brush === 'pixel') {
+          rectMode(CENTER);
+          rect(x, y, grid, grid);
+        } else {
+          if (state.shape === 'square') {
+            rectMode(CENTER);
+            rect(x, y, size, size);
+          } else {
+            ellipse(x, y, size, size);
+          }
+        }
+        noStroke();
+      }
+
+      // -----------------------------
+      // Type: placed text + letter rain
+      // -----------------------------
+      function placeTextAtCursor() {
+        if (state.uiHover) return;
+        const txt = $('textInput').value.trim();
+        if (!txt) {
+          toast('Write text first');
+          return;
+        }
+        if (!insideArtboard(mouseX, mouseY)) {
+          toast('Move cursor into poster');
+          return;
+        }
+
+        pushState('placeText');
+        texts.push({
+          text: txt,
+          x: mouseX,
+          y: mouseY,
+          size: state.typeSize,
+          // store a base hue seed for stability
+          seed: random(1000),
+        });
+        redrawTypeOverlay();
+        toast('Text placed');
+      }
+
+      function scatterType() {
+        const pad = Math.max(20, state.margin * 0.6);
+        for (const t of texts) {
+          t.x = random(art.x + pad, art.x + art.w - pad);
+          t.y = random(art.y + pad, art.y + art.h - pad);
+        }
+        for (const L of letters) {
+          L.x = random(art.x + pad, art.x + art.w - pad);
+          L.y = random(art.y + pad, art.y + art.h * 0.65);
+          L.vx = random(-0.6, 0.6);
+          L.vy = random(-1.4, -0.2);
+          L.active = false;
+        }
+      }
+
+      function activateLetters() {
+        // convert placed texts into letters too (optional vibe)
+        // Here: only activates existing letters
+        for (const L of letters) {
+          L.active = true;
+          L.vx = random(-0.8, 0.8);
+          L.vy = random(-2.0, -0.6);
+        }
+      }
+
+      function stepLetters() {
+        const g = state.gravity;
+        const bounce = 0.45;
+        const floorY = art.y + art.h - 24;
+
+        for (const L of letters) {
+          if (!L.active) continue;
+
+          // mouse interaction on letters
+          if (state.mouseInt) {
+            const f = mouseForce(L.x, L.y);
+            L.vx += f.fx;
+            L.vy += f.fy;
+          }
+
+          L.vy += g;
+          L.x += L.vx;
+          L.y += L.vy;
+          L.vx *= 0.995;
+
+          if (L.y > floorY) {
+            L.y = floorY;
+            L.vy *= -bounce;
+            if (abs(L.vy) < 0.8) {
+              L.vy = 0;
+              L.vx = 0;
+              L.active = false;
+            }
+          }
+
+          const left = art.x + 18,
+            right = art.x + art.w - 18;
+          if (L.x < left) {
+            L.x = left;
+            L.vx *= -0.8;
+          }
+          if (L.x > right) {
+            L.x = right;
+            L.vx *= -0.8;
+          }
+        }
+      }
+
+      function autoStopRainIfSettled() {
+        if (!letters.length) return;
+        if (letters.every((L) => !L.active)) {
+          state.raining = false;
+          $('rainToggle').textContent = 'Make it rain';
+          updateURL();
+        }
+      }
+
+      function redrawTypeOverlay() {
+        typeOverlay.clear();
+
+        // draw placed texts
+        typeOverlay.push();
+        typeOverlay.textAlign(CENTER, CENTER);
+        typeOverlay.noStroke();
+
+        for (const t of texts) {
+          const col = pickStableTextColor(t.seed, state.opacity);
+          typeOverlay.fill(col.h, col.s, col.b, col.a);
+          typeOverlay.textSize(t.size);
+          typeOverlay.text(t.text, t.x, t.y);
+        }
+
+        // draw letters
+        const colL = pickHSB(state.opacity);
+        typeOverlay.fill(colL.h, colL.s, colL.b, colL.a);
+        typeOverlay.textSize(state.typeSize);
+
+        for (const L of letters) {
+          typeOverlay.text(L.ch, L.x, L.y);
+        }
+        typeOverlay.pop();
+      }
+
+      function pickStableTextColor(seed, alpha) {
+        const p = paletteParams(state.palette);
+        const h = (p.base + seed * 37 + 30) % 360;
+        return { h, s: p.s, b: p.b, a: alpha };
+      }
+
+      // typing single characters: add to letters
+      function keyTyped() {
+        if (state.mode !== 'type') return;
+        if (state.uiHover) return;
+        if (key.length !== 1) return;
+
+        pushState('typeChar');
+        const pos = pickSpawnGrid();
+        letters.push({
+          ch: key,
+          x: pos.x,
+          y: pos.y,
+          vx: random(-0.6, 0.6),
+          vy: random(-1.2, -0.2),
+          active: false,
+        });
+        redrawTypeOverlay();
+      }
+
+      // spawn grid in artboard top area
+      const usedCells = new Set();
+      function pickSpawnGrid() {
+        const margin = Math.max(24, state.margin);
+        const cell = 140;
+        const usableH = art.y + art.h * 0.65;
+
+        const cols = Math.floor((art.w - margin * 2) / cell);
+        const rows = Math.floor((usableH - art.y - margin) / cell);
+
+        if (cols < 1 || rows < 1) {
+          return {
+            x: random(art.x + margin, art.x + art.w - margin),
+            y: random(art.y + margin, usableH),
+          };
+        }
+
+        for (let tries = 0; tries < 60; tries++) {
+          const c = Math.floor(random(cols));
+          const r = Math.floor(random(rows));
+          const id = `${c},${r}`;
+          if (!usedCells.has(id)) {
+            usedCells.add(id);
+            return {
+              x: art.x + margin + c * cell + cell / 2 + random(-cell * 0.28, cell * 0.28),
+              y: art.y + margin + r * cell + cell / 2 + random(-cell * 0.28, cell * 0.28),
+            };
+          }
+        }
+
+        return {
+          x: random(art.x + margin, art.x + art.w - margin),
+          y: random(art.y + margin, usableH),
+        };
+      }
+
+      // -----------------------------
+      // Generative drawing
+      // -----------------------------
+      function drawGenerative(g, rect, forPreview) {
+        const p = paletteParams(state.palette);
+        const dens = state.density;
+        const sc = state.scale;
+        const sp = state.speed;
+        const nz = state.noiseAmt;
+
+        const t = frameCount * 0.01 * (0.25 + sp);
+
+        const x0 = rect.x,
+          y0 = rect.y,
+          w = rect.w,
+          h = rect.h;
+
+        g.push();
+        g.noFill();
+
+        if (state.genKind === 'flow') {
+          const lines = Math.floor(map(dens, 10, 240, 12, 90));
+          const stepY = h / (lines + 1);
+
+          g.blendMode(SCREEN);
+          for (let i = 0; i < lines; i++) {
+            const yy = y0 + (i + 1) * stepY;
+            const hue = (p.base + i * 2.2) % 360;
+            const a = map(state.opacity, 5, 100, 8, 34);
+
+            g.stroke(hue, p.s, p.b, a);
+            g.strokeWeight(1);
+
+            g.beginShape();
+            const pts = 120;
+            for (let k = 0; k <= pts; k++) {
+              const xx = x0 + (k / pts) * w;
+              const n = noise(k * 0.06 * sc, i * 0.12 * sc, t);
+              const amp = (14 + 110 * sc) * (0.25 + nz);
+              const y = yy + (n - 0.5) * amp;
+              g.curveVertex(xx, y);
+            }
+            g.endShape();
+          }
+        }
+
+        if (state.genKind === 'orbit') {
+          // particles orbiting
+          g.blendMode(SCREEN);
+          const count = Math.floor(map(dens, 10, 240, 40, 220));
+          const cx = x0 + w / 2,
+            cy = y0 + h / 2;
+
+          for (let i = 0; i < count; i++) {
+            const a = i * 0.19 + t * 1.6;
+            const rr = min(w, h) * 0.12 + noise(i * 0.08, t) * min(w, h) * 0.38 * sc;
+            const xx = cx + cos(a) * rr;
+            const yy = cy + sin(a * 1.1) * rr;
+
+            const hue = (p.base + i * 1.1 + t * 40) % 360;
+            const alpha = map(state.opacity, 5, 100, 10, 45);
+            g.noStroke();
+            g.fill(hue, p.s2, p.b2, alpha);
+            g.circle(xx, yy, 2 + 5 * sc);
+          }
+        }
+
+        if (state.genKind === 'waves') {
+          g.blendMode(SCREEN);
+          const lines = Math.floor(map(dens, 10, 240, 10, 70));
+          const stepY = h / (lines + 1);
+
+          for (let i = 0; i < lines; i++) {
+            const yy = y0 + (i + 1) * stepY;
+            const hue = (p.base + 120 + i * 3.2) % 360;
+            const a = map(state.opacity, 5, 100, 8, 32);
+
+            g.stroke(hue, p.s, p.b, a);
+            g.strokeWeight(1);
+
+            g.beginShape();
+            const pts = 110;
+            for (let k = 0; k <= pts; k++) {
+              const xx = x0 + (k / pts) * w;
+              const n = noise(k * 0.09 * sc + 99, i * 0.18 * sc + 77, t * 0.9);
+              const amp = (10 + 90 * sc) * (0.2 + nz);
+              const y = yy + (n - 0.5) * amp;
+              g.curveVertex(xx, y);
+            }
+            g.endShape();
+          }
+        }
+
+        g.pop();
+      }
+
+      function captureGenerativeToPoster() {
+        // capture the current generative frame into poster graphics
+        poster.push();
+        poster.colorMode(HSB, 360, 100, 100, 100);
+        drawGenerative(poster, art, false);
+        poster.pop();
+      }
+
+      // -----------------------------
+      // FX preview (non destructive)
+      // -----------------------------
+      function applyFXPreview() {
+        // We render the current canvas into a low-res buffer and redraw stylized.
+        // Important: keep it light; FX are mostly for preview + export.
+        const fx = state.fx;
+        if (fx === 'none') return;
+
+        // snapshot current screen (includes poster+type+guides)
+        const src = get(); // p5.Image of current canvas
+        const W = width,
+          H = height;
+
+        if (fx === 'pixel') {
+          const s = 10; // pixel size
+          const smallW = Math.max(60, Math.floor(W / s));
+          const smallH = Math.max(60, Math.floor(H / s));
+          src.resize(smallW, smallH);
+          noSmooth();
+          image(src, 0, 0, W, H);
+          smooth();
+          return;
+        }
+
+        if (fx === 'dither') {
+          // ordered dither on downsample
+          const s = 6;
+          const smallW = Math.max(80, Math.floor(W / s));
+          const smallH = Math.max(80, Math.floor(H / s));
+          src.resize(smallW, smallH);
+          src.loadPixels();
+
+          const bayer4 = [
+            [0, 8, 2, 10],
+            [12, 4, 14, 6],
+            [3, 11, 1, 9],
+            [15, 7, 13, 5],
+          ];
+
+          const out = createImage(smallW, smallH);
+          out.loadPixels();
+          for (let y = 0; y < smallH; y++) {
+            for (let x = 0; x < smallW; x++) {
+              const idx = 4 * (y * smallW + x);
+              const r = src.pixels[idx],
+                g = src.pixels[idx + 1],
+                b = src.pixels[idx + 2];
+              const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+              const threshold = (bayer4[y % 4][x % 4] + 0.5) / 16;
+              const v = lum > threshold ? 255 : 0;
+              out.pixels[idx] = v;
+              out.pixels[idx + 1] = v;
+              out.pixels[idx + 2] = v;
+              out.pixels[idx + 3] = 255;
+            }
+          }
+          out.updatePixels();
+          noSmooth();
+          image(out, 0, 0, W, H);
+          smooth();
+          return;
+        }
+
+        if (fx === 'ascii') {
+          // ASCII render low-res
+          const chars = ' .,:;i1tfLCG08@';
+          const s = 10;
+          const smallW = Math.max(80, Math.floor(W / s));
+          const smallH = Math.max(60, Math.floor(H / s));
+          src.resize(smallW, smallH);
+          src.loadPixels();
+
+          // clear to bg
+          const bg = hexToHSB(state.bg);
+          background(bg.h, bg.s, bg.b, 100);
+
+          textAlign(LEFT, TOP);
+          textSize(s);
+          noStroke();
+
+          const p = paletteParams(state.palette);
+          fill((p.base + 20) % 360, p.s, p.b, 70);
+
+          for (let y = 0; y < smallH; y++) {
+            for (let x = 0; x < smallW; x++) {
+              const idx = 4 * (y * smallW + x);
+              const r = src.pixels[idx],
+                g = src.pixels[idx + 1],
+                b = src.pixels[idx + 2];
+              const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+              const ci = Math.floor(lum * (chars.length - 1));
+              const ch = chars[ci];
+              text(ch, x * s, y * s);
+            }
+          }
+          return;
+        }
+      }
+
+      // -----------------------------
+      // Export PNG (includes FX + type)
+      // -----------------------------
+      function exportPNG(scale) {
+        // render at scale on offscreen
+        const W = Math.floor((state.artboard === 'free' ? width : art.w) * scale);
+        const H = Math.floor((state.artboard === 'free' ? height : art.h) * scale);
+
+        const out = createGraphics(W, H);
+        out.pixelDensity(1);
+        out.colorMode(HSB, 360, 100, 100, 100);
+
+        // bg
+        const bg = hexToHSB(state.bg);
+        out.background(bg.h, bg.s, bg.b, 100);
+
+        // if gen live and currently visible, include it on export
+        if (state.mode === 'gen' && state.live) {
+          const r = { x: 0, y: 0, w: W, h: H };
+          // temporary map state to scaled rect
+          drawGenerative(out, r, false);
+        }
+
+        // composite poster + type scaled & cropped to artboard if not free
+        if (state.artboard === 'free') {
+          out.image(poster, 0, 0, W, H);
+          out.image(typeOverlay, 0, 0, W, H);
+        } else {
+          // crop from main layers (artboard area only)
+          const cropPoster = poster.get(art.x, art.y, art.w, art.h);
+          const cropType = typeOverlay.get(art.x, art.y, art.w, art.h);
+          out.image(cropPoster, 0, 0, W, H);
+          out.image(cropType, 0, 0, W, H);
+        }
+
+        // apply FX at export too (optional)
+        if (state.fx !== 'none') {
+          const img = out.get();
+          // reuse preview FX logic, but on the export buffer:
+          const fxed = applyFXToImage(img, state.fx, W, H);
+          out.clear();
+          out.image(fxed, 0, 0, W, H);
+        }
+
+        save(out, 'poster-tool.png');
+        toast('Exported PNG');
+      }
+
+      function applyFXToImage(img, fx, W, H) {
+        // returns p5.Image sized W,H
+        if (fx === 'pixel') {
+          const s = 10;
+          const smallW = Math.max(60, Math.floor(W / s));
+          const smallH = Math.max(60, Math.floor(H / s));
+          img.resize(smallW, smallH);
+          const out = createImage(W, H);
+          // draw pixelated by scaling up via graphics
+          const g = createGraphics(W, H);
+          g.noSmooth();
+          g.image(img, 0, 0, W, H);
+          const res = g.get();
+          g.remove();
+          return res;
+        }
+
+        if (fx === 'dither') {
+          const s = 6;
+          const smallW = Math.max(90, Math.floor(W / s));
+          const smallH = Math.max(90, Math.floor(H / s));
+          img.resize(smallW, smallH);
+          img.loadPixels();
+
+          const bayer4 = [
+            [0, 8, 2, 10],
+            [12, 4, 14, 6],
+            [3, 11, 1, 9],
+            [15, 7, 13, 5],
+          ];
+          const outSmall = createImage(smallW, smallH);
+          outSmall.loadPixels();
+          for (let y = 0; y < smallH; y++) {
+            for (let x = 0; x < smallW; x++) {
+              const idx = 4 * (y * smallW + x);
+              const r = img.pixels[idx],
+                g = img.pixels[idx + 1],
+                b = img.pixels[idx + 2];
+              const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+              const threshold = (bayer4[y % 4][x % 4] + 0.5) / 16;
+              const v = lum > threshold ? 255 : 0;
+              outSmall.pixels[idx] = v;
+              outSmall.pixels[idx + 1] = v;
+              outSmall.pixels[idx + 2] = v;
+              outSmall.pixels[idx + 3] = 255;
+            }
+          }
+          outSmall.updatePixels();
+          const g2 = createGraphics(W, H);
+          g2.noSmooth();
+          g2.image(outSmall, 0, 0, W, H);
+          const res = g2.get();
+          g2.remove();
+          return res;
+        }
+
+        if (fx === 'ascii') {
+          const chars = ' .,:;i1tfLCG08@';
+          const s = 10;
+          const smallW = Math.max(120, Math.floor(W / s));
+          const smallH = Math.max(90, Math.floor(H / s));
+          img.resize(smallW, smallH);
+          img.loadPixels();
+
+          const g = createGraphics(W, H);
+          g.pixelDensity(1);
+          g.colorMode(HSB, 360, 100, 100, 100);
+          const bg = hexToHSB(state.bg);
+          g.background(bg.h, bg.s, bg.b, 100);
+
+          const p = paletteParams(state.palette);
+          g.fill((p.base + 20) % 360, p.s, p.b, 70);
+          g.noStroke();
+          g.textAlign(LEFT, TOP);
+          g.textSize(s);
+
+          for (let y = 0; y < smallH; y++) {
+            for (let x = 0; x < smallW; x++) {
+              const idx = 4 * (y * smallW + x);
+              const r = img.pixels[idx],
+                gg = img.pixels[idx + 1],
+                b = img.pixels[idx + 2];
+              const lum = (0.2126 * r + 0.7152 * gg + 0.0722 * b) / 255;
+              const ci = Math.floor(lum * (chars.length - 1));
+              g.text(chars[ci], x * s, y * s);
+            }
+          }
+          const res = g.get();
+          g.remove();
+          return res;
+        }
+
+        return img;
+      }
+
+      // -----------------------------
+      // Recording (WebM)
+      // -----------------------------
+      function toggleRecord() {
+        const btn = $('rec');
+        if (!recording) {
+          try {
+            const stream = document.querySelector('canvas').captureStream(60);
+            recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+            recChunks = [];
+            recorder.ondataavailable = (e) => {
+              if (e.data.size) recChunks.push(e.data);
+            };
+            recorder.onstop = () => {
+              const blob = new Blob(recChunks, { type: 'video/webm' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'poster-tool.webm';
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              setTimeout(() => URL.revokeObjectURL(url), 1500);
+              toast('Video saved');
+            };
+            recorder.start();
+            recording = true;
+            btn.textContent = 'Record: stop';
+            toast('Recording…');
+          } catch (e) {
+            toast('Record not supported');
+          }
+        } else {
+          recording = false;
+          btn.textContent = 'Record: start';
+          if (recorder && recorder.state !== 'inactive') recorder.stop();
+        }
+      }
+
+      // -----------------------------
+      // Undo / Redo (snapshots)
+      // -----------------------------
+      function snapshot() {
+        return {
+          posterImg: poster.get(),
+          typeImg: typeOverlay.get(),
+          texts: JSON.parse(JSON.stringify(texts)),
+          letters: JSON.parse(JSON.stringify(letters)),
+          state: JSON.parse(JSON.stringify(state)),
+        };
+      }
+
+      function restore(s) {
+        // restore state
+        Object.assign(state, s.state);
+
+        // restore layers
+        poster.clear();
+        poster.image(s.posterImg, 0, 0);
+
+        typeOverlay.clear();
+        typeOverlay.image(s.typeImg, 0, 0);
+
+        texts = s.texts || [];
+        letters = s.letters || [];
+
+        applyStateToUI();
+        updateLabels();
+        recalcArtboard();
+      }
+
+      function pushState(reason) {
+        undoStack.push(snapshot());
+        if (undoStack.length > MAX_UNDO) undoStack.shift();
+        redoStack.length = 0;
+      }
+
+      function undo() {
+        if (!undoStack.length) return;
+        redoStack.push(snapshot());
+        restore(undoStack.pop());
+        toast('Undo');
+      }
+
+      function redo() {
+        if (!redoStack.length) return;
+        undoStack.push(snapshot());
+        restore(redoStack.pop());
+        toast('Redo');
+      }
+
+      function keyPressed() {
+        const ctrl = keyIsDown(CONTROL) || keyIsDown(91); // mac cmd
+        if (ctrl && (key === 'z' || key === 'Z')) {
+          undo();
+          return false;
+        }
+        if (ctrl && (key === 'y' || key === 'Y')) {
+          redo();
+          return false;
+        }
+      }
+
+      // -----------------------------
+      // Poster actions
+      // -----------------------------
+      function clearPoster() {
+        poster.clear();
+        // keep type overlay separate; user can clear type separately
+      }
+
+      function applyBGUnderPoster() {
+        // Poster is transparent; BG is drawn in main canvas.
+        // This action exists mainly as a workflow step; we just clear usedCells for type spawn.
+        usedCells.clear();
+      }
+
+      function hardReset() {
+        Object.assign(state, {
+          mode: 'paint',
+          bg: '#050505',
+          palette: 'violet',
+          fx: 'none',
+          mirror: 'off',
+          sym: 1,
+          opacity: 70,
+
+          mouseInt: true,
+          mouseMode: 'repulse',
+          mouseStrength: 0.9,
+
+          artboard: 'free',
+          guides: true,
+          margin: 64,
+
+          brush: 'round',
+          shape: 'circle',
+          size: 22,
+          grid: 12,
+
+          typeSize: 84,
+          gravity: 0.35,
+          raining: false,
+
+          genKind: 'flow',
+          live: true,
+          density: 120,
+          scale: 0.8,
+          speed: 0.9,
+          noiseAmt: 1.2,
+
+          uiHover: false,
+        });
+
+        poster.clear();
+        typeOverlay.clear();
+        texts = [];
+        letters = [];
+        usedCells.clear();
+      }
+
+      function tastefulRandomize() {
+        const pals = ['mono', 'violet', 'holo', 'acid'];
+        const fxs = ['none', 'pixel', 'dither', 'ascii'];
+        const mirrors = ['off', 'x', 'y', 'both'];
+        const syms = [1, 2, 4, 6, 8];
+
+        state.palette = random(pals);
+        state.fx = random(fxs);
+        state.mirror = random(mirrors);
+        state.sym = random(syms);
+
+        state.opacity = Math.round(random(55, 92));
+
+        state.brush = random(['round', 'pixel', 'spray', 'line']);
+        state.shape = random(['circle', 'square']);
+        state.size = Math.round(random(12, 42));
+        state.grid = Math.round(random(8, 18));
+
+        state.typeSize = Math.round(random(56, 128));
+        state.gravity = random(0.2, 0.8);
+
+        state.genKind = random(['flow', 'orbit', 'waves']);
+        state.density = Math.round(random(80, 190));
+        state.scale = random(0.55, 1.1);
+        state.speed = random(0.4, 1.4);
+        state.noiseAmt = random(0.7, 1.8);
+
+        state.mouseInt = true;
+        state.mouseMode = random(['repulse', 'magnet', 'lens']);
+        state.mouseStrength = random(0.55, 1.35);
+      }
+
+      // -----------------------------
+      // Guides
+      // -----------------------------
+      function drawGuides() {
+        push();
+        noFill();
+        stroke(0, 0, 100, 18);
+        strokeWeight(1);
+
+        // artboard outline
+        rectMode(CORNER);
+        rect(art.x, art.y, art.w, art.h, 12);
+
+        // safe margin
+        const m = state.margin;
+        if (m > 0) {
+          stroke(0, 0, 100, 10);
+          rect(art.x + m, art.y + m, art.w - 2 * m, art.h - 2 * m, 10);
+        }
+
+        // center cross
+        stroke(0, 0, 100, 8);
+        const cx = art.x + art.w / 2;
+        const cy = art.y + art.h / 2;
+        line(cx, art.y, cx, art.y + art.h);
+        line(art.x, cy, art.x + art.w, cy);
+
+        pop();
+      }
+
+      // -----------------------------
+      // Mouse interaction force
+      // -----------------------------
+      function mouseForce(x, y) {
+        if (!state.mouseInt) return { fx: 0, fy: 0 };
+        if (!insideArtboard(mouseX, mouseY)) return { fx: 0, fy: 0 };
+
+        const r = 180;
+        const dx = x - mouseX;
+        const dy = y - mouseY;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d > r) return { fx: 0, fy: 0 };
+
+        const t = 1 - d / r;
+        const strength = t * t * state.mouseStrength * 0.9;
+        const nx = dx / (d || 1);
+        const ny = dy / (d || 1);
+
+        if (state.mouseMode === 'repulse') {
+          return { fx: nx * strength, fy: ny * strength };
+        }
+        if (state.mouseMode === 'magnet') {
+          return { fx: -nx * strength, fy: -ny * strength };
+        }
+        // lens: slight swirl + pull
+        const swirl = 0.55 * strength;
+        return { fx: -nx * strength * 0.35 + -ny * swirl, fy: -ny * strength * 0.35 + nx * swirl };
+      }
+
+      // -----------------------------
+      // Helpers
+      // -----------------------------
+      function insideArtboard(x, y) {
+        return x >= art.x && x <= art.x + art.w && y >= art.y && y <= art.y + art.h;
+      }
+      function snap(v, g) {
+        return Math.round(v / g) * g;
+      }
+      function rotatePoint(x, y, cx, cy, ang) {
+        const dx = x - cx,
+          dy = y - cy;
+        const rx = dx * Math.cos(ang) - dy * Math.sin(ang);
+        const ry = dx * Math.sin(ang) + dy * Math.cos(ang);
+        return { x: cx + rx, y: cy + ry };
+      }
+      function hexToHSB(hex) {
+        const r = parseInt(hex.slice(1, 3), 16) / 255;
+        const g = parseInt(hex.slice(3, 5), 16) / 255;
+        const b = parseInt(hex.slice(5, 7), 16) / 255;
+        const mx = Math.max(r, g, b),
+          mn = Math.min(r, g, b);
+        const d = mx - mn;
+
+        let h = 0;
+        if (d !== 0) {
+          if (mx === r) h = ((g - b) / d) % 6;
+          else if (mx === g) h = (b - r) / d + 2;
+          else h = (r - g) / d + 4;
+          h *= 60;
+          if (h < 0) h += 360;
+        }
+        const s = mx === 0 ? 0 : (d / mx) * 100;
+        const v = mx * 100;
+        return { h, s, b: v };
+      }
+
+      // init after defining everything
+      // (gallery+ui initialized inside setup)
+    </script>
+  </body>
+</html>

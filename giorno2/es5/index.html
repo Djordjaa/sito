@@ -5,12 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
   </head>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
   <body>
     <script src="https://cdn.jsdelivr.net/npm/p5@1.11.11/lib/p5.min.js"></script>
     <script>
       function setup() {
         // creiamo un elemento canvas
-        createCanvas(512, 384);
+        createCanvas(windowWidth, windowHeight);
       }
 
       function draw() {
@@ -18,14 +25,14 @@
         background(0);
         noStroke();
 
-        let numH = 30;
-        let numV = 30;
-        let d = 12;
+        let numH = 100;
+        let numV = 50;
+        let d = 11;
         let ox = (width - (numH - 1) * d) / 2;
         let oy = (height - (numV - 1) * d) / 2;
         for (let j = 0; j < numV; j++) {
           for (let i = 0; i < numH; i++) {
-            fill(i * 10, j * 10, 255 - i * 10);
+            fill(i * 5, j * 10, 255 - i * 5);
             let px = ox + i * d;
             let py = oy + j * d;
             circle(px, py, 10);

@@ -30,10 +30,7 @@
 
         let spostamentoNoise = mouseX * 0.01;
 
-        // let spostamentoNoise2 = frameCount * 0.02;
-
         for (let i = 0; i < width; i++) {
-          // let r1 = noise(i * 0.01, frameCount * 0.01) * height;
           let r1 = sin(i * 0.1) * 10;
           rect(i, r1 + 100, 1, 1);
 

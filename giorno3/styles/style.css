@@ -1,0 +1,34 @@
+.poppins-bold {
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.poppins-extrabold {
+  font-family: "Poppins", sans-serif;
+  font-weight: 800;
+  font-style: normal;
+}
+
+.bitcount-grid-double-light {
+  font-family: "Bitcount Grid Double", system-ui;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: light;
+  font-variation-settings:
+    "slnt" 0,
+    "CRSV" 0.5,
+    "ELSH" 0,
+    "ELXP" 0;
+}
+
+html, body {
+   margin: 0;
+   padding: 0;
+   background-color: black;
+   overflow: hidden;
+}
+      
+canvas {
+   display: block;
+}
