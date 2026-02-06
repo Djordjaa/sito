@@ -80,7 +80,6 @@ a {
   pointer-events: none;
   z-index: 9999;
   transform: translate3d(calc(var(--cursor-x) - 4px), calc(var(--cursor-y) - 4px), 0);
-
   mix-blend-mode: difference;
 }
 
@@ -99,7 +98,6 @@ main {
   text-transform: uppercase;
   letter-spacing: 1px;
   color: #666;
-  dis
 }
 
 .hero {
